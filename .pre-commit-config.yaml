@@ -1,0 +1,27 @@
+# The same checks as the lint workflow, with the tool versions from uv.lock.
+# Install the hooks with: pre-commit install
+repos:
+  - repo: local
+    hooks:
+      - id: uv-lock
+        name: check that uv.lock is up to date
+        entry: uv lock --check
+        language: system
+        files: ^(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --locked ruff check --fix --exit-non-zero-on-fix --force-exclude
+        language: system
+        types_or: [python, pyi]
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --locked ruff format --force-exclude
+        language: system
+        types_or: [python, pyi]
+      - id: ty
+        name: ty check
+        entry: uv run --locked --all-extras ty check --error-on-warning
+        language: system
+        types_or: [python, pyi]
+        pass_filenames: false

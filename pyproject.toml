@@ -1,0 +1,98 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fsspec-lamindb"
+version = "0.1.0"
+description = "Read-only fsspec filesystem for LaminDB instances: lamin://<owner>/<instance>/... URIs resolved through the LaminHub REST API."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Andreas Poehlmann", email = "andreas@poehlmann.io" }]
+requires-python = ">=3.11"
+dependencies = [
+    "fsspec>=2024.6.1",
+    "aiohttp>=3.9",
+    "s3fs>=2024.6.1",
+]
+keywords = ["fsspec", "lamindb", "laminhub", "filesystem"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: System :: Filesystems",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/ap--/fsspec-lamindb"
+Issues = "https://github.com/ap--/fsspec-lamindb/issues"
+Source = "https://github.com/ap--/fsspec-lamindb"
+Changelog = "https://github.com/ap--/fsspec-lamindb/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+gcs = ["gcsfs>=2024.6.1"]
+hf = ["huggingface_hub>=0.20"]
+all = ["fsspec-lamindb[gcs,hf]"]
+
+[project.entry-points."fsspec.specs"]
+lamin = "fsspec_lamindb:LaminDBFileSystem"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.6",
+    "ty>=0.0.84",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fsspec_lamindb"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/", "tests/", "README.md", "LICENSE", "pyproject.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# the examples in README.md and the docstrings read laminlabs/lamindata, see `just test-live`
+doctest_optionflags = ["ELLIPSIS", "NORMALIZE_WHITESPACE"]
+markers = [
+    "live: tests against the live LaminHub REST API (set FSSPEC_LAMINDB_LIVE=1 to run)",
+    "lamindb_setup: tests that the LaminHub defaults match lamindb-setup (run with `just test-lamindb-setup`)",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "D", "ASYNC", "RUF", "PT", "S"]
+# docstrings are optional, but those that exist follow the numpy convention
+ignore = ["D1"]
+
+[tool.ruff.lint.per-file-ignores]
+# asserts, fake credentials and pickling are expected in tests
+"tests/**" = ["S101", "S105", "S301"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.coverage.run]
+branch = true
+source = ["fsspec_lamindb"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = true

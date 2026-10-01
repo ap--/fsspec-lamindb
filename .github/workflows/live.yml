@@ -1,0 +1,46 @@
+name: Live tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # on the 1st and the 15th of each month, to notice changes of LaminHub
+  schedule:
+    - cron: "0 6 1,15 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_COLOR: "1"
+  FSSPEC_LAMINDB_LIVE: "1"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  live:
+    name: Tests and doc examples against LaminHub
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv and Python 3.14
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.14"
+
+      # public instances are read anonymously, so no secrets are needed
+      - name: Run the live tests and the examples of README.md and the docstrings
+        run: >-
+          uv run --locked --all-extras pytest tests/test_live.py
+          --doctest-modules src --doctest-glob="*.md" README.md
+
+      - name: Check that the LaminHub defaults match the latest lamindb-setup
+        run: uv run --locked --with lamindb-setup pytest -m lamindb_setup

@@ -1,0 +1,18 @@
+# Monthly updates of the pinned GitHub Actions and of uv.lock, one pull request each.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      uv:
+        patterns: ["*"]
