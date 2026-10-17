@@ -31,12 +31,12 @@ class FakeS3(MemoryFileSystem):
     # shared by all instances, like in MemoryFileSystem
     store: dict = {}  # noqa: RUF012
     pseudo_dirs = [""]  # noqa: RUF012
-    created: ClassVar[list[dict]] = []
+    init_kwargs: ClassVar[list[dict]] = []
     # how many reads fail as if the credentials had expired
     permission_errors: ClassVar[int] = 0
 
     def __init__(self, *args, **kwargs):
-        FakeS3.created.append(dict(kwargs))
+        FakeS3.init_kwargs.append(dict(kwargs))
         super().__init__(*args, **kwargs)
 
     def cat_file(self, path, start=None, end=None, **kwargs):
@@ -77,12 +77,12 @@ def storages(request):
     original = registry.get("s3")
     fsspec.register_implementation("s3", FakeS3, clobber=True)
     FakeS3.store.clear()
-    FakeS3.created.clear()
+    FakeS3.init_kwargs.clear()
     FakeS3.permission_errors = 0
     s3 = FakeS3()
     for key, data in S3_OBJECTS.items():
         s3.pipe_file(f"s3://{key}", data)
-    FakeS3.created.clear()
+    FakeS3.init_kwargs.clear()
     memory = MemoryFileSystem()
     for path, data in MEMORY_FILES.items():
         memory.pipe_file(path, data)

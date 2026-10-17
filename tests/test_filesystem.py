@@ -371,7 +371,7 @@ def test_storage_on_another_branch_is_found_again_after_listing(lamin, hub):
 
 def test_lamin_managed_s3_uses_credentials_from_laminhub(lamin, hub):
     assert lamin.cat_file(TABLE) == b"a,b\n1,2\n"
-    (options,) = FakeS3.created
+    (options,) = FakeS3.init_kwargs
     assert options["key"] == "key-for-s3://bucket-a"
     assert options["secret"] == "secret"
     assert options["token"] == "session"
@@ -381,13 +381,13 @@ def test_lamin_managed_s3_uses_credentials_from_laminhub(lamin, hub):
     assert api_info[0][2] == "Bearer token-1"
     # the filesystem and its credentials are reused
     lamin.cat_file(READS)
-    assert len(FakeS3.created) == 1
+    assert len(FakeS3.init_kwargs) == 1
 
 
 def test_rejected_laminhub_credentials_are_renewed_once(lamin, hub):
     FakeS3.permission_errors = 1
     assert lamin.cat_file(TABLE) == b"a,b\n1,2\n"
-    assert len(FakeS3.created) == 2
+    assert len(FakeS3.init_kwargs) == 2
     assert len([c for c in hub.calls if c[0] == "cloud_access"]) == 2
     FakeS3.permission_errors = 2
     with pytest.raises(PermissionError):
@@ -398,26 +398,26 @@ def test_other_credentials_are_not_renewed(lamin):
     FakeS3.permission_errors = 1
     with pytest.raises(PermissionError):
         lamin.cat_file(PUBLIC)
-    assert len(FakeS3.created) == 1
+    assert len(FakeS3.init_kwargs) == 1
 
 
 def test_delegated_storage_credentials(lamin, hub):
     assert lamin.cat_file(DELEGATED) == b"delegated"
     (call,) = [c for c in hub.calls if c[0] == "delegated"]
     assert call[1] == "s3://delegated-bucket"
-    assert FakeS3.created[0]["key"] == "key-for-s3://delegated-bucket"
+    assert FakeS3.init_kwargs[0]["key"] == "key-for-s3://delegated-bucket"
 
 
 def test_unmanaged_s3_is_read_anonymously_without_ambient_credentials(lamin):
     assert lamin.cat_file(PUBLIC) == b"from public s3"
-    assert FakeS3.created[0]["anon"] is True
-    assert "key" not in FakeS3.created[0]
+    assert FakeS3.init_kwargs[0]["anon"] is True
+    assert "key" not in FakeS3.init_kwargs[0]
 
 
 def test_anonymous_callers_ask_laminhub_with_its_public_key(hub):
     fs = make_fs(hub, api_key=None)
     assert fs.cat_file(TABLE) == b"a,b\n1,2\n"
-    assert FakeS3.created[0]["key"] == "key-for-s3://bucket-a"
+    assert FakeS3.init_kwargs[0]["key"] == "key-for-s3://bucket-a"
     api_info = [c for c in hub.calls if c[0] == "api_info"]
     assert api_info[0][2] == "Bearer anon-key"
 
@@ -425,7 +425,7 @@ def test_anonymous_callers_ask_laminhub_with_its_public_key(hub):
 def test_remote_options_replace_laminhub_credentials(hub):
     fs = make_fs(hub, remote_options={"s3": {"profile": "mine", "client_kwargs": {"x": 1}}})
     fs.cat_file(TABLE)
-    options = FakeS3.created[0]
+    options = FakeS3.init_kwargs[0]
     assert options["profile"] == "mine"
     assert "key" not in options
     assert options["client_kwargs"] == {"region_name": "us-east-1", "x": 1}
@@ -440,7 +440,7 @@ def test_remote_options_by_storage_root(hub):
     fs = make_fs(hub, remote_options=remote_options)
     fs.cat_file(PUBLIC)
     fs.cat_file(TABLE)
-    public, managed = FakeS3.created
+    public, managed = FakeS3.init_kwargs
     assert public["profile"] == "public"
     assert public["client_kwargs"] == {"x": 1, "y": 2}
     assert managed["profile"] == "default"
@@ -449,10 +449,10 @@ def test_remote_options_by_storage_root(hub):
 
 def test_storage_filesystems_do_not_cache_listings(lamin, hub):
     lamin.cat_file(TABLE)
-    assert FakeS3.created[0]["use_listings_cache"] is False
+    assert FakeS3.init_kwargs[0]["use_listings_cache"] is False
     fs = make_fs(hub, remote_options={"s3": {"use_listings_cache": True}})
     fs.cat_file(TABLE)
-    assert FakeS3.created[1]["use_listings_cache"] is True
+    assert FakeS3.init_kwargs[1]["use_listings_cache"] is True
 
 
 def test_http_storage_is_read_with_the_async_http_filesystem(lamin, hub):
