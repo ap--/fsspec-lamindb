@@ -7,14 +7,20 @@ lamindb-setup isn't a dependency, so these tests are skipped without it. Run the
 from __future__ import annotations
 
 import importlib
+import importlib.util
 
 import pytest
 
 from fsspec_lamindb import _hub
 
-pytestmark = pytest.mark.lamindb_setup
-
-pytest.importorskip("lamindb_setup")
+# a skipif mark instead of pytest.importorskip, which pytest-asyncio 0.23.0 turns into an
+# INTERNALERROR when it's raised while the module is imported
+pytestmark = [
+    pytest.mark.lamindb_setup,
+    pytest.mark.skipif(
+        importlib.util.find_spec("lamindb_setup") is None, reason="lamindb-setup isn't installed"
+    ),
+]
 
 
 @pytest.fixture
