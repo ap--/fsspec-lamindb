@@ -22,6 +22,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # the package version is derived from the git tags by hatch-vcs
+          fetch-depth: 0
 
       - name: Set up uv
         uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
@@ -29,19 +31,21 @@ jobs:
           # don't restore caches when building release artifacts
           enable-cache: false
 
-      - name: Check that the release tag matches the package version
+      - name: Build package
+        run: uv build
+
+      - name: Check that the package version matches the release tag
         if: github.event_name == 'release'
         env:
           TAG: ${{ github.event.release.tag_name }}
         run: |
-          version="$(uv version --short)"
-          if [ "${TAG#v}" != "$version" ]; then
-            echo "::error::release tag $TAG does not match the package version $version"
-            exit 1
-          fi
-
-      - name: Build package
-        run: uv build
+          version="${TAG#v}"
+          for dist in "dist/fsspec_lamindb-${version}.tar.gz" "dist/fsspec_lamindb-${version}-py3-none-any.whl"; do
+            if [ ! -f "$dist" ]; then
+              echo "::error::release tag $TAG does not match the built distributions: $(ls dist | tr '\n' ' ')"
+              exit 1
+            fi
+          done
 
       - name: Check package metadata
         run: uvx twine check --strict dist/*
