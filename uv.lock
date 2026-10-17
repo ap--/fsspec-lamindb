@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.14'",
@@ -846,7 +846,6 @@ wheels = [
 
 [[package]]
 name = "fsspec-lamindb"
-version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -879,12 +878,13 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.9" },
     { name = "fsspec", specifier = ">=2024.6.1" },
-    { name = "fsspec-lamindb", extras = ["gcs", "hf"], marker = "extra == 'all'" },
+    { name = "gcsfs", marker = "extra == 'all'", specifier = ">=2024.6.1" },
     { name = "gcsfs", marker = "extra == 'gcs'", specifier = ">=2024.6.1" },
+    { name = "huggingface-hub", marker = "extra == 'all'", specifier = ">=0.20" },
     { name = "huggingface-hub", marker = "extra == 'hf'", specifier = ">=0.20" },
     { name = "s3fs", specifier = ">=2024.6.1" },
 ]
-provides-extras = ["gcs", "hf", "all"]
+provides-extras = ["all", "gcs", "hf"]
 
 [package.metadata.requires-dev]
 dev = [

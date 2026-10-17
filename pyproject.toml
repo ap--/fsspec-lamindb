@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling>=1.27"]
+requires = ["hatchling>=1.27", "hatch-vcs>=0.4"]
 build-backend = "hatchling.build"
 
 [project]
 name = "fsspec-lamindb"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Read-only fsspec filesystem for LaminDB instances: lamin://<owner>/<instance>/... URIs resolved through the LaminHub REST API."
 readme = "README.md"
 license = "MIT"
@@ -55,6 +55,14 @@ dev = [
     "ruff>=0.6",
     "ty>=0.0.84",
 ]
+
+# the version comes from the git tag, e.g. v0.1.0, and is a dev version between tags
+[tool.hatch.version]
+source = "vcs"
+
+[tool.uv]
+# reinstall the project when the git commit or tags change, to update its version
+cache-keys = [{ file = "pyproject.toml" }, { git = { commit = true, tags = true } }]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fsspec_lamindb"]
